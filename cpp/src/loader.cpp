@@ -43,7 +43,7 @@ int check_version(zip *z) {
 static std::string find_layer_name(const char *content, int start_idx) {
   const uint32_t max_layer_name = 32;
   uint32_t it = 0;
-  for (int i = 0; i < max_layer_name; i++) {
+  for (uint32_t i = 0; i < max_layer_name; i++) {
     if (content[start_idx - i] == 'X') {
       it = i - 1;
       break;
@@ -62,7 +62,7 @@ static std::string find_layer_name(const char *content, int start_idx) {
       break;
     }
   }
-  return std::string(content + start_idx, it);
+  return std::string(content + start_idx - 1, it + 1);
 }
 
 static void add_layer_to_stack(std::vector<nn_layer> &layers, bool is_b_or_w,
@@ -118,12 +118,10 @@ std::vector<nn_layer> file_content(zip *z) {
       int param_idx = (is_bias_or_weight) ? bias_idx : weight_idx;
 
       std::string const layer_name = find_layer_name(content, param_idx);
-
       add_layer_to_stack(layers, is_bias_or_weight, layer_name, name);
     }
   }
   delete[] content;
-
   return layers;
 }
 
@@ -151,21 +149,43 @@ std::vector<std::string> data_names(zip *z) {
   return files;
 }
 
-int read_zip_file(char const *name) {
+std::vector<nn_parameters> data_content(zip *z,
+                                        std::vector<nn_layer> const &names) {
+  std::vector<nn_parameters> out;
+
+  for (nn_layer const &l : names) {
+    std::string const w_name = "archive/data/" + l.weight;
+    std::string const b_name = "archive/data/" + l.bias;
+
+    char *w_content = nullptr;
+    char *b_content = nullptr;
+    uint32_t w_size = 0;
+    uint32_t b_size = 0;
+    read_content(z, w_name.c_str(), &w_content, w_size);
+    read_content(z, b_name.c_str(), &w_content, w_size);
+
+    // init struct for single layer
+    struct nn_parameters p;
+    p.name = l.name;
+    p.weight_param = (float *)w_content;
+    p.weight_size = w_size;
+    p.bias_param = (float *)b_content;
+    p.bias_size = b_size;
+    out.push_back(p);
+  }
+  return out;
+}
+
+std::vector<nn_parameters> read_zip_file(char const *name) {
   int err;
   zip *z = zip_open(name, 0, &err);
-
   if (err == 9) {
     std::cerr << "zip not found: err " << err << "\n";
     exit(1);
   }
-
-  int status = check_version(z);
-  std::cout << status << "\n";
-
-  auto aa = file_content(z);
-
+  check_version(z);
+  std::vector<nn_layer> const layers = file_content(z);
+  std::vector<nn_parameters> res = data_content(z, layers);
   zip_close(z);
-
-  return 0;
+  return res;
 }

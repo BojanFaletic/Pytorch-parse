@@ -1,8 +1,9 @@
 .PHONY=all,clean
 
 CC=clang++
+SANITIZE=-fsanitize=address -fno-omit-frame-pointer
 CEXTRA:= -O2
-CFLAGS= $(CEXTRA) -std=c++20 -Wall -Wextra
+CFLAGS= $(CEXTRA) $(SANITIZE) -std=c++20 -Wall -Wextra
 LDFLAGS=-lzip
 
 SRCS=$(wildcard src/*.cpp)
