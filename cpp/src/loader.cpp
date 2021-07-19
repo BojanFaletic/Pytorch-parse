@@ -1,6 +1,6 @@
 #include "loader.hpp"
-#include <string.h>
 #include "string_util.hpp"
+#include <string.h>
 
 int read_content(zip *z, const char *f_name, char **content, uint32_t &size) {
   struct zip_stat st;
@@ -40,112 +40,86 @@ int check_version(zip *z) {
   return EXIT_SUCCESS;
 }
 
+static std::string find_layer_name(const char *content, int start_idx) {
+  const uint32_t max_layer_name = 32;
+  uint32_t it = 0;
+  for (int i = 0; i < max_layer_name; i++) {
+    if (content[start_idx - i] == 'X') {
+      it = i - 1;
+      break;
+    }
+  }
+  start_idx -= it;
+
+  // remove zeros before layer name
+  while (!std::isalpha(content[start_idx++])) {
+  }
+
+  // remove tail
+  for (uint32_t i = 0; i < it; i++) {
+    if (content[start_idx + i] == '.') {
+      it = i;
+      break;
+    }
+  }
+  return std::string(content + start_idx, it);
+}
+
+static void add_layer_to_stack(std::vector<nn_layer> &layers, bool is_b_or_w,
+                               std::string const &layer_name,
+                               std::string const &param) {
+  // check if name is unique, else add it to layers
+  bool layer_exists = false;
+  for (nn_layer &nn : layers) {
+    if (nn.name == layer_name) {
+      if (is_b_or_w) {
+        nn.bias = param;
+      } else {
+        nn.weight = param;
+      }
+      layer_exists = true;
+      break;
+    }
+  }
+  if (!layer_exists) {
+    struct nn_layer l;
+    l.name = layer_name;
+    if (is_b_or_w) {
+      l.bias = param;
+    } else {
+      l.weight = param;
+    }
+    layers.push_back(l);
+  }
+}
+
 std::vector<nn_layer> file_content(zip *z) {
   const char *f_name = "archive/data.pkl";
+  std::vector<nn_layer> layers;
 
   char *content = nullptr;
   uint32_t size = 0;
   read_content(z, f_name, &content, size);
 
-  std::vector<nn_layer> layers;
-
-  std::vector<std::string> params = data_names(z);
-
-  // parse input
-  for (std::string const &n : params) {
-    struct nn_layer single_layer;
-
-    int found = find_first_of(content, size, n.c_str());
-
-    if (found != -1){
-      std::cout << "found at idx: " << found << " " << n << '\n';
-
-      if (strcmp(n.c_str(), "94779429638048") == 0){
-        std::cout << "here\n";
-      }
+  std::vector<std::string> const param_names = data_names(z);
+  for (std::string const &name : param_names) {
+    int data_name = find_first_of(content, size, name.c_str());
+    if (data_name != -1) {
       // look back to find name
-      int bias_idx = find_reverse_first_of(content, found, "bias");
-      int weight_idx = find_reverse_first_of(content, found, "weight");
+      int bias_idx = find_reverse_first_of(content, data_name, "bias");
+      int weight_idx = find_reverse_first_of(content, data_name, "weight");
 
-
-      if (bias_idx == -1 && weight_idx == -1){
+      if (bias_idx == -1 && weight_idx == -1) {
         std::cerr << "No valid weight or bias file found\n";
         exit(1);
       }
-      bool valid_bias = false;
-      bool valid_weight = false;
-      std::string name = n;
-      if (bias_idx > weight_idx){
-        valid_bias = true;
-      }
-      else{
-        valid_weight = true;
-      }
-      int valid_idx = std::max(bias_idx, weight_idx);
 
-      // search back to find name
-      const uint32_t max_layer_name = 16;
-      uint32_t it = 0;
-      for (int i=0; i<max_layer_name; i++){
-        char letter = *(content + valid_idx - i);
-        if (letter == 'X'){
-          it = i-1;
-          break;
-        }
-      }
-      uint32_t str_start = valid_idx - it;
-      // increment start pointer to remove non ASCII characters
-      uint32_t offset = 0;
-      while (!std::isalpha(content[str_start + offset])){
-        offset++;
-      }
-      str_start = str_start+offset;
+      bool is_bias_or_weight = (bias_idx > weight_idx);
+      int param_idx = (is_bias_or_weight) ? bias_idx : weight_idx;
 
-      // decrete end ptr to remove dot
-      for (uint32_t i=0; i<it; i++){
-        if (content[str_start+i] == '.'){
-          it = i;
-          break;
-        }
-      }
+      std::string const layer_name = find_layer_name(content, param_idx);
 
-      std::string layer_name(content+str_start, it);
-
-      std::cout << layer_name << "\n";
-
-      // assign name
-      single_layer.name = layer_name;
-
-
-      // check if name is unique, else add it to layers
-      bool layer_exists = false;
-      for (nn_layer &nn : layers){
-        if (nn.name == single_layer.name){
-          // found existing name
-          if (valid_weight){
-            nn.weight = name;
-          }
-          if (valid_bias){
-            nn.bias = name;
-         }
-         layer_exists = true;
-         break;
-        }
-      }
-      if (!layer_exists){
-        struct nn_layer l;
-        l.name = layer_name;
-        if (valid_weight){
-          l.weight = name;
-        }
-        if (valid_bias){
-          l.bias = name;
-        }
-
-        // append to layer list
-        layers.push_back(l);
-      }
-
+      add_layer_to_stack(layers, is_bias_or_weight, layer_name, name);
     }
   }
   delete[] content;
