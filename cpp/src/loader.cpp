@@ -26,7 +26,10 @@ int check_version(zip *z) {
   char *content = nullptr;
   uint32_t size;
 
-  read_content(z, f_name, &content, size);
+  int status = read_content(z, f_name, &content, size);
+  if (status != EXIT_SUCCESS) {
+    return EXIT_FAILURE;
+  }
 
   uint32_t version_num;
   sscanf(content, "%u", &version_num);
@@ -161,16 +164,18 @@ std::vector<nn_parameters> data_content(zip *z,
     char *b_content = nullptr;
     uint32_t w_size = 0;
     uint32_t b_size = 0;
+
     read_content(z, w_name.c_str(), &w_content, w_size);
-    read_content(z, b_name.c_str(), &w_content, w_size);
+    read_content(z, b_name.c_str(), &b_content, b_size);
 
     // init struct for single layer
     struct nn_parameters p;
-    p.name = l.name;
     p.weight_param = (float *)w_content;
-    p.weight_size = w_size;
     p.bias_param = (float *)b_content;
+    p.name = std::move(l.name);
+    p.weight_size = w_size;
     p.bias_size = b_size;
+
     out.push_back(p);
   }
   return out;
@@ -183,9 +188,12 @@ std::vector<nn_parameters> read_zip_file(char const *name) {
     std::cerr << "zip not found: err " << err << "\n";
     exit(1);
   }
-  check_version(z);
-  std::vector<nn_layer> const layers = file_content(z);
-  std::vector<nn_parameters> res = data_content(z, layers);
+  std::vector<nn_parameters> res;
+  int status = check_version(z);
+  if (status == EXIT_SUCCESS) {
+    std::vector<nn_layer> const layers = file_content(z);
+    res = data_content(z, layers);
+  }
   zip_close(z);
   return res;
 }
