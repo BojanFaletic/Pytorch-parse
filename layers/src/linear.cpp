@@ -33,6 +33,11 @@ void Linear::init_params(float *weight, uint32_t w_size) {
   this->biases = matrix::zeros(n_out, 1);
 }
 
+void Linear::init_params() {
+  weights = matrix::ones(n_in, n_out);
+  biases = matrix::zeros(n_out, 1);
+}
+
 void Linear::forward(matrix &in, matrix &out) const {
   out = in.dot_sparse(weights) + biases;
 }

@@ -18,6 +18,7 @@ public:
                    uint32_t b_size);
 
   void init_params(float *weight, uint32_t w_size);
+  void init_params();
 
   void forward(matrix &in, matrix &out) const;
 };

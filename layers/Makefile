@@ -1,4 +1,4 @@
-.PHONY=all,clean
+.PHONY=all,clean, test
 
 CC=clang++
 SANITIZE=-fsanitize=address -fno-omit-frame-pointer
@@ -12,6 +12,7 @@ HEADERS=-Iheader -I../Matrix/header
 
 all: test.cpp $(SRCS)
 	$(CC) $(CFLAGS) $(HEADERS) $^ -o test $(LDFLAGS)
+
 
 clean:
 	rm -f test
