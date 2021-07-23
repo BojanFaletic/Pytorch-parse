@@ -1,6 +1,8 @@
 #pragma once
 
 #include "matrix.hpp"
+#include "matrix1.hpp"
+
 #include <stdint.h>
 
 class Linear {
@@ -8,17 +10,12 @@ public:
   char const *name;
 
 private:
-  uint32_t const n_in, n_out;
-  matrix weights, biases;
+  matrix weights;
+  matrix biases;
 
 public:
   Linear(char const *name, uint32_t n_in, uint32_t n_out);
-
-  void init_params(float *weight, uint32_t w_size, float *biases,
-                   uint32_t b_size);
-
-  void init_params(float *weight, uint32_t w_size);
-  void init_params();
+  Linear(char const *name, matrix const &weights, matrix1 const &biases);
 
   void forward(matrix &in, matrix &out) const;
 };

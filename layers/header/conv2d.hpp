@@ -1,35 +1,25 @@
 #pragma once
 
+#include "matrix1.hpp"
+#include "matrix3.hpp"
+#include "matrix4.hpp"
 #include <stdint.h>
 
-typedef struct conv_cfg {
-  uint32_t in_channels;
-  uint32_t out_channels;
-  uint32_t kernel_x;
-  uint32_t kernel_y;
-  uint32_t image_y;
-  uint32_t image_x;
-} conv_cfg;
-
-class conv2d {
+class Conv2d {
   const char *name;
-  conv_cfg const param;
 
-  float *weights;
-  float *biases;
-
-  void convolve(float *in, float *out);
+  matrix4 weights;
+  matrix1 biases;
 
 public:
   // normal with all options
-  conv2d(const char *name, conv_cfg const param);
+  Conv2d(const char *name, uint32_t in_channels, uint32_t out_channels,
+         uint32_t kernel);
 
-  // load parameters from pkl file
-  void init_parameters(float *weights, uint32_t w_size, float *biases,
-                       uint32_t b_size);
+  Conv2d(const char *name, matrix4 const &weights, matrix1 const &biases);
 
   // use random parameters
   void init_parameters();
 
-  void forward(float *in, float *out);
+  void forward(matrix3 const &in, matrix3 &out);
 };
