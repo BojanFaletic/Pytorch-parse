@@ -13,13 +13,12 @@ class Conv2d {
 
 public:
   // normal with all options
+  Conv2d();
   Conv2d(const char *name, uint32_t in_channels, uint32_t out_channels,
          uint32_t kernel);
 
   Conv2d(const char *name, matrix4 const &weights, matrix1 const &biases);
+  ~Conv2d();
 
-  // use random parameters
-  void init_parameters();
-
-  void forward(matrix3 const &in, matrix3 &out);
+  matrix3 operator()(matrix3 const &in);
 };

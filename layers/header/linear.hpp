@@ -14,8 +14,9 @@ private:
   matrix biases;
 
 public:
+  Linear();
   Linear(char const *name, uint32_t n_in, uint32_t n_out);
   Linear(char const *name, matrix const &weights, matrix1 const &biases);
 
-  void forward(matrix &in, matrix &out) const;
+  matrix operator()(matrix const &in) const;
 };

@@ -1,8 +1,9 @@
 #include "linear.hpp"
 #include <iostream>
 
+Linear::Linear() {}
 Linear::Linear(char const *name, uint32_t n_in, uint32_t n_out) : name{name} {
-  weights = matrix::random(n_in, n_out);
+  weights = matrix::random(n_out, n_in).T();
   biases = matrix::random(1, n_out);
 }
 
@@ -12,7 +13,8 @@ Linear::Linear(char const *name, matrix const &weights, matrix1 const &biases)
   this->biases = biases.unsqueeze(0);
 }
 
-
-void Linear::forward(matrix &in, matrix &out) const {
+matrix Linear::operator()(matrix const &in) const {
+  matrix out;
   out = in.dot_sparse(weights) + biases;
+  return out;
 }
