@@ -42,7 +42,7 @@ matrix3 Conv2d::operator()(matrix3 const &in) {
             }
           }
         }
-        out(co, y - kernel_offset, x - kernel_offset) = 1;
+        out(co, y - kernel_offset, x - kernel_offset) = acc;
       }
     }
   }
