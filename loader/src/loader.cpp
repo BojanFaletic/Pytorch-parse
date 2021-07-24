@@ -173,8 +173,8 @@ std::vector<nn_parameters> data_content(zip *z,
     p.weight_param = (float *)w_content;
     p.bias_param = (float *)b_content;
     p.name = std::move(l.name);
-    p.weight_size = w_size;
-    p.bias_size = b_size;
+    p.weight_size = w_size / sizeof(float);
+    p.bias_size = b_size / sizeof(float);
 
     out.push_back(p);
   }

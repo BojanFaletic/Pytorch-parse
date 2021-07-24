@@ -1,0 +1,9 @@
+[submodule "Matrix"]
+	path = Matrix
+	url = https://github.com/BojanFaletic/Matrix
+[submodule "lodepng"]
+	path = lodepng
+	url = https://github.com/lvandeve/lodepng
+[submodule "zlib"]
+	path = zlib
+	url = https://github.com/madler/zlib
