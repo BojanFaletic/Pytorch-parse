@@ -13,7 +13,7 @@ LD=clang++
 SANITIZE= -Wall -fsanitize=address -fno-omit-frame-pointer
 
 CXXFLAGS=-std=c++20 -Wall -Wextra -O2 -Wpedantic -c
-CXXFLAGS_DBG=-std=c++20 $(SANITIZE) -c
+CXXFLAGS_DBG=-std=c++20 $(SANITIZE) -g -c
 LDFLAGS= -lzip  $(SANITIZE)
 
 # Name of project (top file)
@@ -67,7 +67,7 @@ $(PROJECT_NAME)_dgb : $(OBJ_ALL_DBG)
 
 # build all objects
 obj/$(PROJECT_NAME).o : obj/%.o : %.cpp
-	$(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) -IMatrix/header -Iloader/header -Ilayers/header $(CXXFLAGS) $< -o $@
 
 $(MATRIX_OBJS): obj/%.o : $(SRC_MATRIX_DIR)%.cpp
 	$(CXX) -IMatrix/header $(CXXFLAGS) $< -o $@
@@ -80,7 +80,7 @@ $(LOADER_OBJS): obj/%.o : $(SRC_LOADER_DIR)%.cpp
 
 # build all objcets used for debugging
 obj_dbg/$(PROJECT_NAME).o : obj_dbg/%.o : %.cpp
-	$(CXX) $(CXXFLAGS_DBG) $< -o $@
+	$(CXX) -IMatrix/header -Iloader/header -Ilayers/header  $(CXXFLAGS_DBG) $< -o $@
 
 $(MATRIX_OBJS_DBG): obj_dbg/%.o : $(SRC_MATRIX_DIR)%.cpp
 	$(CXX) -IMatrix/header $(CXXFLAGS_DBG) $< -o $@
